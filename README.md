@@ -149,13 +149,13 @@ Full context restored.
 ### Work on Multiple Ideas
 
 ```bash
-if-setup warranty-tracker
-if-setup newsletter-tool
-if-setup data-pipeline
+if-setup project-a
+if-setup project-b
+if-setup project-c
 
-cd warranty-tracker    # Say "continue" → context A
-cd newsletter-tool     # Say "continue" → context B
-cd data-pipeline       # Say "continue" → context C
+cd project-a    # Say "continue" → context A
+cd project-b    # Say "continue" → context B
+cd project-c    # Say "continue" → context C
 ```
 
 Each maintains independent context. Switch freely.
@@ -168,9 +168,9 @@ if-analytics
 
 ```
 ┌─────────────────────────────────────────────┐
-│  warranty-tracker   █████████░ 85% ✓ READY  │
-│  newsletter-tool    ██████░░░░ 58% ⚡ WIP   │
-│  data-pipeline      ████░░░░░░ 42% 💭 THINK │
+│  project-a          █████████░ 85% ✓ READY  │
+│  project-b          ██████░░░░ 58% ⚡ WIP   │
+│  project-c          ████░░░░░░ 42% 💭 THINK │
 └─────────────────────────────────────────────┘
 ```
 
