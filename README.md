@@ -1,184 +1,57 @@
 # Idea Factory
 
-**Persistent context for AI-native development. Work on 150 ideas without chaos.**
+File-based infrastructure for persistent AI conversations. Optimizes for getting from idea to production in a single prompt.
 
-<div align="center">
+## What This Is
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+A system for working on many ideas simultaneously without losing context. When you say "continue" in a new session, full context restores: decisions made, assumptions tested, readiness score, what to do next.
 
-[Quick Start](#quick-start) • [Documentation](docs/getting-started.md) • [Examples](examples/) • [Why This Exists](#why-this-exists)
-
-</div>
-
----
+The objective function: **minimize prompts from idea to production**.
 
 ## The Problem
 
-You're building something with Claude. Making progress. Then you close your laptop.
+Traditional AI development loses context between sessions. You have a productive conversation, close your laptop, come back tomorrow—context is gone. You spend the first 10 minutes reconstructing what you already discussed.
 
-Next day: **New conversation. Context gone. Start over.**
+This compounds when working on multiple ideas. Context switching between projects means starting from zero each time.
 
-This is why people don't ship with AI.
-
-## The Solution
-
-```bash
-# One-time install
-curl -fsSL https://raw.githubusercontent.com/pauljump/idea-factory/main/install.sh | bash
-
-# Setup any idea
-if-setup my-saas-idea
-
-# Every session after
-cd my-saas-idea
-```
-
-Say: **"continue"**
-
-```
-Welcome back to my-saas-idea.
-
-Last session: 8 days ago
-Readiness: 72% (ready to build!)
-
-Decisions made:
-✅ Use PostgreSQL for storage
-✅ Stripe for payments
-✅ Next.js for frontend
-
-Open questions:
-⚠️ How to handle auth?
-
-Next: Test OAuth flow
-
-What should we work on?
-```
-
-**Everything is still there.**
-
----
-
-## What You Get
-
-### 🧠 Persistent Context
-- Conversations survive session closure
-- Decisions automatically extracted
-- Readiness tracked continuously
-- Never lose context again
-
-### 🎯 Portfolio Creativity
-- Work on **150 ideas** (not just 1-3)
-- Context switches **instantly**
-- Ideas compound across projects
-
-### 📈 Readiness-Driven Development
-- **0-40%:** Exploring (keep talking)
-- **40-70%:** Designing (getting clearer)
-- **70%+:** Ready to build (perfect prompt achieved)
-
-### 🔄 Methodology as Code
-- Templates sync globally
-- Improve once, deploy everywhere
-- Methodology compounds over time
-
----
-
-## Quick Start
-
-### Installation (30 seconds)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/pauljump/idea-factory/main/install.sh | bash
-```
-
-This installs:
-- `if-setup` - Create AI-ready workspace
-- `if-sync` - Sync methodology globally
-- `if-analytics` - View all project readiness
-
-### Create Your First Idea (2 minutes)
-
-```bash
-# Create new idea
-if-setup my-app
-
-# Claude will scaffold:
-# ✓ .claude/ - Conversation persistence
-# ✓ .idea-factory/ - Methodology templates
-# ✓ GitHub repo - External memory
-# ✓ README - Auto-generated
-
-# Start building
-cd my-app
-# Open Claude Code and say "continue"
-```
-
-### Work on Multiple Ideas (Unlimited)
-
-```bash
-# Setup 3 ideas
-if-setup saas-platform
-if-setup mobile-app
-if-setup api-service
-
-# Switch between them
-cd saas-platform  # Say "continue" - full context restores
-cd mobile-app     # Say "continue" - different context
-cd api-service    # Say "continue" - yet another context
-
-# View all projects
-if-analytics
-```
-
-```
-┌─────────────────────────────────────────────┐
-│  Idea Factory Analytics                     │
-├─────────────────────────────────────────────┤
-│  saas-platform      █████████░ 85% ✓ READY  │
-│  mobile-app         ██████░░░░ 58% ⚡ WIP   │
-│  api-service        ████░░░░░░ 42% 💭 THINK │
-│  Total: 150 projects                        │
-└─────────────────────────────────────────────┘
-```
-
----
+**Result:** You can only work on 2-3 ideas because the context tax is too high.
 
 ## How It Works
 
-### File-Based Memory
+### File-Based Persistence
 
 ```
-your-idea/
-  .claude/                    # Conversation persistence
-    conversations/            # Daily logs
-    insights/                 # Extracted decisions, assumptions
-    state/                    # Readiness score, session info
+project/
+  .claude/
+    conversations/        # Daily logs
+    insights/            # Extracted decisions, assumptions, blockers
+    state/
+      session.json       # Last session summary
+      readiness.json     # 0-100 score
+      next.md           # Queued actions
 
-  .idea-factory/              # Methodology
-    working-guide.md          # How to work with AI
-    conversation-protocol.md  # Session protocol
-
-  experiments/                # Validation tests
+  .idea-factory/
+    working-guide.md     # Methodology
+    conversation-protocol.md
 ```
 
-### The "Continue" Protocol
+When you say "continue", Claude reads these files and reconstructs full context.
 
-When you say **"continue"**, Claude:
+### Insight Extraction
 
-1. Reads `.claude/state/session.json` (last session)
-2. Reads `.claude/insights/all.json` (all decisions)
-3. Checks `gh issue list` (GitHub external memory)
-4. Generates context-aware greeting
+Conversations automatically extract:
+- **Decisions** - "Let's use PostgreSQL"
+- **Assumptions** - "Users will want email notifications"
+- **Blockers** - "Don't know how to handle edge case X"
+- **Approaches** - "Implement with queue-based architecture"
 
-**You pick up exactly where you left off.**
+These accumulate in structured JSON, queryable across all projects.
 
 ### Readiness Tracking
 
-Don't code until readiness ≥ 70%.
+Don't build until you have a clear prompt. Readiness score (0-100%) indicates when:
 
-```javascript
+```
 readiness = (
   coreValue      * 0.30 +    // Problem clarity
   mvpScope       * 0.25 +    // What to build
@@ -188,181 +61,198 @@ readiness = (
 )
 ```
 
-**0-40%:** Keep talking
-**40-70%:** Almost ready
-**70-85%:** Start building
-**85-100%:** Just ship
+- **0-40%:** Keep talking, don't code
+- **40-70%:** Getting clearer
+- **70%+:** Clear prompt, start building
 
----
+### Cross-Project Learning
 
-## Commands
-
-### `if-setup <name>`
-Create AI-ready workspace with full infrastructure
+Insights compound across projects:
 
 ```bash
-if-setup my-saas
-# Creates project with .claude/, .idea-factory/, GitHub repo
+# All ideas using email parsing
+grep "email parsing" ~/.ideafactory/catalog/catalog.csv
+
+# All assumptions that failed
+jq '.assumptions[] | select(.validated == false)' */.claude/insights/all.json
+
+# Patterns that worked in shipped projects
+find . -name "readiness.json" -exec jq 'select(.score > 85)' {} \;
 ```
 
-### `if-sync`
-Deploy methodology updates to all projects
+Learnings from project 1 inform approach on project 50.
+
+## Installation
 
 ```bash
-# Edit master template
-vim ~/.ideafactory/templates/working-guide.md
-
-# Deploy to all 150 projects
-if-sync
+curl -fsSL https://raw.githubusercontent.com/pauljump/idea-factory/main/install.sh | bash
 ```
 
-### `if-analytics`
-Terminal dashboard showing all project readiness
+Requires: `git`, `gh` (GitHub CLI)
+
+## Usage
+
+### Create Project
+
+```bash
+if-setup my-saas-idea
+cd my-saas-idea
+```
+
+Opens with `.claude/` and `.idea-factory/` scaffolded, GitHub repo created.
+
+### Start Conversation
+
+In Claude Code:
+
+```
+User: continue
+
+Claude: Welcome to my-saas-idea.
+
+This is a new project. Let's define:
+- Core problem
+- Primary user
+- Value proposition
+
+What should we work on?
+```
+
+### Resume Later
+
+Close laptop. Come back days later:
+
+```
+User: continue
+
+Claude: Welcome back to my-saas-idea.
+
+Last session: 8 days ago
+Readiness: 72% (ready to build)
+
+Decisions made:
+✓ Use Stripe for payments
+✓ PostgreSQL for data
+✓ Next.js frontend
+
+Assumptions to validate:
+⚠ Users will connect bank accounts
+⚠ Fraud detection sufficient
+
+Next: Build OAuth flow
+
+What should we work on?
+```
+
+Full context restored.
+
+### Work on Multiple Ideas
+
+```bash
+if-setup saas-platform
+if-setup mobile-app
+if-setup data-pipeline
+
+cd saas-platform    # Say "continue" → context A
+cd mobile-app       # Say "continue" → context B
+cd data-pipeline    # Say "continue" → context C
+```
+
+Each maintains independent context. Switch freely.
+
+### View All Projects
 
 ```bash
 if-analytics
-# Interactive TUI showing readiness scores
 ```
 
----
+```
+┌─────────────────────────────────────────────┐
+│  saas-platform      █████████░ 85% ✓ READY  │
+│  mobile-app         ██████░░░░ 58% ⚡ WIP   │
+│  data-pipeline      ████░░░░░░ 42% 💭 THINK │
+└─────────────────────────────────────────────┘
+```
 
-## Use Cases
+### Sync Methodology
 
-### Solo Founder with 50 Ideas
-"I have notebooks full of ideas but can only focus on 1-2 because of context switching cost. **Idea Factory lets me work on all 50** and make progress on whatever feels right each day."
+Improve working-guide.md once, deploy to all projects:
 
-### AI Engineer Building Portfolio
-"I was building 3 side projects but losing context between sessions. **Now I work on 12 projects** and each conversation picks up where I left off."
+```bash
+vim ~/.ideafactory/templates/.idea-factory/working-guide.md
+if-sync  # Updates all 150 projects
+```
 
-### Product Team Exploring Experiments
-"We run constant experiments but lose findings. **Idea Factory tracks every decision and assumption** so nothing gets lost."
+## Why This Works
 
----
+**Conversation persistence** - Context survives session closure
+**Structured insights** - Decisions/assumptions/blockers extracted automatically
+**Readiness scoring** - Don't build until prompt is clear
+**Cross-project learning** - Insights from 150 projects compound
+**Methodology as code** - Templates sync globally
+
+**Result:** Work on 150 ideas with same cognitive overhead as 3.
 
 ## Architecture
 
-**Conversation Persistence:**
-- Markdown logs in `.claude/conversations/`
-- Structured insights in `.claude/insights/all.json`
-- Readiness scoring in `.claude/state/readiness.json`
+Pure bash. No npm, no Python, no dependencies beyond git/gh.
 
-**Methodology as Infrastructure:**
-- Master templates in `~/.ideafactory/templates/`
-- Synced to all projects via `if-sync`
-- Update once, deploy globally
+**Core libraries:**
+- `lib/utils.sh` - Common functions
+- `lib/config.sh` - Configuration
+- `lib/scaffold.sh` - Project setup
 
-**GitHub Integration:**
-- Every idea = GitHub repo (external memory)
-- Issues = open questions + async thoughts
-- PRs = experiment results
+**Commands:**
+- `if-setup` - Create project
+- `if-sync` - Sync templates
+- `if-analytics` - View readiness
 
-**Zero Dependencies:**
-- Pure bash (works everywhere)
-- Only requires: `git`, `gh` (GitHub CLI)
-- No npm, no Python, no Ruby
+**Templates:**
+- `.claude/` - Conversation persistence structure
+- `.idea-factory/` - Methodology templates
 
----
+## Commands
+
+```bash
+if-setup <name>       # Create new project
+if-sync               # Sync methodology to all projects
+if-analytics          # View readiness dashboard
+```
+
+## Configuration
+
+Config at `~/.ideafactory/config`:
+
+```bash
+PROJECTS_DIR=$HOME/Desktop/projects
+TEMPLATES_DIR=$HOME/.ideafactory/templates
+CATALOG_DIR=$HOME/.ideafactory/catalog
+```
+
+## GitHub Integration
+
+Every project gets a GitHub repo. Use issues as external memory:
+
+```bash
+gh issue create --title "Try approach X"
+```
+
+Next session, Claude sees the issue and incorporates it.
+
+## Scale
+
+Tested with 150+ projects. No practical limit. Readiness dashboard shows all at once.
 
 ## Examples
 
-### Example 1: SaaS Product
-See [examples/002-saas-product/](examples/002-saas-product/) for a complete walkthrough building a SaaS from idea → ship using Idea Factory.
-
-### Example 2: Weekend Project
-See [examples/001-minimal-idea/](examples/001-minimal-idea/) for a 5-minute tutorial.
-
-### Tutorial
-See [examples/TUTORIAL.md](examples/TUTORIAL.md) for step-by-step guide.
-
----
-
-## Documentation
-
-- **[Getting Started](docs/getting-started.md)** - Installation and first steps
-- **[Core Concepts](docs/core-concepts.md)** - How the system works
-- **[Commands](docs/commands.md)** - Complete CLI reference
-- **[Readiness System](docs/readiness-system.md)** - Scoring methodology
-- **[GitHub Integration](docs/github-integration.md)** - Using GitHub as memory
-- **[Advanced Usage](docs/advanced-usage.md)** - Power user tips
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues
-
----
-
-## Comparison to Other Tools
-
-| Feature | Idea Factory | Notion | Linear | Obsidian |
-|---------|--------------|--------|---------|----------|
-| AI Context Persistence | ✅ | ❌ | ❌ | ❌ |
-| Readiness Tracking | ✅ | ❌ | ❌ | ❌ |
-| Methodology Sync | ✅ | ❌ | ❌ | ❌ |
-| File-Based (no server) | ✅ | ❌ | ❌ | ✅ |
-| GitHub Integration | ✅ | ❌ | ~️ | ❌ |
-| Works with Claude | ✅ | ❌ | ❌ | ❌ |
-
----
-
-## FAQ
-
-**Q: Why not just use Notion?**
-A: Notion doesn't persist AI conversation context. You still start from zero each session.
-
-**Q: Do I need Claude Code?**
-A: Works with any Claude interface that has file access. Claude Code is recommended.
-
-**Q: Can I use this for non-code ideas?**
-A: Yes! Works for any idea that benefits from iterative refinement with AI.
-
-**Q: How many ideas can I manage?**
-A: Tested with 150+ projects. No practical limit.
-
-**Q: Does this work on Windows?**
-A: Currently macOS/Linux. Windows support via WSL2 coming soon.
-
----
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-**Areas we'd love help:**
-- Windows native support
-- Web dashboard (alternative to terminal UI)
-- VS Code extension
-- Integration tests
-
----
+See `docs/getting-started.md` for walkthrough.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
-
----
-
-## Credits
-
-Built by [Paul Jump](https://github.com/pauljump) to solve personal context chaos while building 150 ideas with AI.
-
-Inspired by:
-- **[Continue](https://continue.dev/)** - AI code assistant
-- **[Agent Relay](https://github.com/AgentWorkforce/relay)** - Agent messaging
-- Personal pain of losing context across 150 projects
-
----
+MIT
 
 ## Links
 
-- **[GitHub](https://github.com/pauljump/idea-factory)**
-- **[Documentation](docs/)**
-- **[Examples](examples/)**
-- **[Issues](https://github.com/pauljump/idea-factory/issues)**
-- **[Discussions](https://github.com/pauljump/idea-factory/discussions)**
-
----
-
-<div align="center">
-
-**One word unlocks everything: continue**
-
-Made with ❤️ for AI-native builders
-
-</div>
+- [Getting Started](docs/getting-started.md)
+- [GitHub](https://github.com/pauljump/idea-factory)
+- [Issues](https://github.com/pauljump/idea-factory/issues)
