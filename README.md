@@ -95,8 +95,8 @@ Requires: `git`, `gh` (GitHub CLI)
 ### Create Project
 
 ```bash
-if-setup my-saas-idea
-cd my-saas-idea
+if-setup my-idea
+cd my-idea
 ```
 
 Opens with `.claude/` and `.idea-factory/` scaffolded, GitHub repo created.
@@ -108,7 +108,7 @@ In Claude Code:
 ```
 User: continue
 
-Claude: Welcome to my-saas-idea.
+Claude: Welcome to my-idea.
 
 This is a new project. Let's define:
 - Core problem
@@ -125,21 +125,21 @@ Close laptop. Come back days later:
 ```
 User: continue
 
-Claude: Welcome back to my-saas-idea.
+Claude: Welcome back to my-idea.
 
 Last session: 8 days ago
 Readiness: 72% (ready to build)
 
 Decisions made:
-✓ Use Stripe for payments
-✓ PostgreSQL for data
-✓ Next.js frontend
+✓ Use X for Y
+✓ Approach Z for core logic
+✓ Start with minimal scope
 
 Assumptions to validate:
-⚠ Users will connect bank accounts
-⚠ Fraud detection sufficient
+⚠ Users will adopt this workflow
+⚠ Technical approach handles edge cases
 
-Next: Build OAuth flow
+Next: Build first prototype
 
 What should we work on?
 ```
@@ -149,13 +149,13 @@ Full context restored.
 ### Work on Multiple Ideas
 
 ```bash
-if-setup saas-platform
-if-setup mobile-app
+if-setup warranty-tracker
+if-setup newsletter-tool
 if-setup data-pipeline
 
-cd saas-platform    # Say "continue" → context A
-cd mobile-app       # Say "continue" → context B
-cd data-pipeline    # Say "continue" → context C
+cd warranty-tracker    # Say "continue" → context A
+cd newsletter-tool     # Say "continue" → context B
+cd data-pipeline       # Say "continue" → context C
 ```
 
 Each maintains independent context. Switch freely.
@@ -168,8 +168,8 @@ if-analytics
 
 ```
 ┌─────────────────────────────────────────────┐
-│  saas-platform      █████████░ 85% ✓ READY  │
-│  mobile-app         ██████░░░░ 58% ⚡ WIP   │
+│  warranty-tracker   █████████░ 85% ✓ READY  │
+│  newsletter-tool    ██████░░░░ 58% ⚡ WIP   │
 │  data-pipeline      ████░░░░░░ 42% 💭 THINK │
 └─────────────────────────────────────────────┘
 ```
