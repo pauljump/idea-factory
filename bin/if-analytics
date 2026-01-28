@@ -1,0 +1,161 @@
+#!/bin/bash
+set -e
+
+# if-analytics - View readiness dashboard for all projects
+# Usage: if-analytics [--format=table|json]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
+
+# Source utilities
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/config.sh"
+
+# Show help
+show_help() {
+    cat << EOF
+if-analytics - View project readiness dashboard
+
+Usage:
+  if-analytics [options]
+
+Options:
+  --format=table    Show table format (default)
+  --format=json     Show JSON format
+  --sort=name       Sort by name (default)
+  --sort=readiness  Sort by readiness score
+  --sort=updated    Sort by last updated
+  -h, --help        Show this help message
+
+Example:
+  if-analytics
+  if-analytics --sort=readiness
+  if-analytics --format=json
+
+For more help: https://github.com/pauljump/idea-factory
+EOF
+}
+
+# Parse arguments
+FORMAT="table"
+SORT="name"
+
+for arg in "$@"; do
+    case $arg in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        --format=*)
+            FORMAT="${arg#*=}"
+            ;;
+        --sort=*)
+            SORT="${arg#*=}"
+            ;;
+    esac
+done
+
+# Scan all projects
+PROJECTS_DIR="$(get_projects_dir)"
+declare -a projects
+
+for project in "$PROJECTS_DIR"/*; do
+    if [ ! -d "$project" ]; then
+        continue
+    fi
+
+    if [ -f "$project/.claude/state/readiness.json" ]; then
+        project_name=$(basename "$project")
+
+        # Read readiness score
+        if command -v jq &> /dev/null; then
+            score=$(jq -r '.score // 0' "$project/.claude/state/readiness.json" 2>/dev/null || echo "0")
+            status=$(jq -r '.status // "unknown"' "$project/.claude/state/readiness.json" 2>/dev/null || echo "unknown")
+            updated=$(jq -r '.lastUpdated // ""' "$project/.claude/state/readiness.json" 2>/dev/null || echo "")
+        else
+            score=0
+            status="unknown"
+            updated=""
+        fi
+
+        projects+=("$project_name|$score|$status|$updated")
+    fi
+done
+
+# Sort projects
+if [ "$SORT" = "readiness" ]; then
+    IFS=$'\n' projects=($(sort -t'|' -k2 -rn <<< "${projects[*]}"))
+elif [ "$SORT" = "updated" ]; then
+    IFS=$'\n' projects=($(sort -t'|' -k4 -r <<< "${projects[*]}"))
+else
+    IFS=$'\n' projects=($(sort -t'|' -k1 <<< "${projects[*]}"))
+fi
+
+# Output
+if [ "$FORMAT" = "json" ]; then
+    # JSON output
+    echo "["
+    for i in "${!projects[@]}"; do
+        IFS='|' read -r name score status updated <<< "${projects[$i]}"
+        echo "  {"
+        echo "    \"name\": \"$name\","
+        echo "    \"readiness\": $score,"
+        echo "    \"status\": \"$status\","
+        echo "    \"lastUpdated\": \"$updated\""
+        if [ $i -lt $((${#projects[@]} - 1)) ]; then
+            echo "  },"
+        else
+            echo "  }"
+        fi
+    done
+    echo "]"
+else
+    # Table output
+    echo ""
+    echo_blue "┌─────────────────────────────────────────────────────────────────┐"
+    echo_blue "│                    Idea Factory Analytics                       │"
+    echo_blue "├─────────────────────────────────────────────────────────────────┤"
+
+    if [ ${#projects[@]} -eq 0 ]; then
+        echo_yellow "│  No projects found                                             │"
+        echo_blue "└─────────────────────────────────────────────────────────────────┘"
+        echo ""
+        log_info "Create your first project: if-setup my-idea"
+        echo ""
+        exit 0
+    fi
+
+    for project_data in "${projects[@]}"; do
+        IFS='|' read -r name score status updated <<< "$project_data"
+
+        # Format readiness bar
+        bar_length=10
+        filled=$(( score * bar_length / 100 ))
+        empty=$(( bar_length - filled ))
+        bar=$(printf "%${filled}s" | tr ' ' '█')$(printf "%${empty}s" | tr ' ' '░')
+
+        # Status emoji
+        case $status in
+            exploring) status_icon="💭" ;;
+            designing) status_icon="⚡" ;;
+            ready_to_build) status_icon="✓" ;;
+            ship_it) status_icon="🚀" ;;
+            *) status_icon="?" ;;
+        esac
+
+        # Truncate name if too long
+        if [ ${#name} -gt 25 ]; then
+            display_name="${name:0:22}..."
+        else
+            display_name="$name"
+        fi
+
+        printf "│  %-25s %s %3d%% %s %-8s │\n" \
+            "$display_name" "$bar" "$score" "$status_icon" "$status"
+    done
+
+    echo_blue "├─────────────────────────────────────────────────────────────────┤"
+    printf "${BLUE}│  Total: %-53s │${NC}\n" "${#projects[@]} projects"
+    echo_blue "└─────────────────────────────────────────────────────────────────┘"
+    echo ""
+fi

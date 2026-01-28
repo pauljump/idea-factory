@@ -1,0 +1,82 @@
+#!/bin/bash
+set -e
+
+# if-setup - Create AI-ready workspace
+# Usage: if-setup <project-name> [idea-id]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
+
+# Source utilities
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/scaffold.sh"
+
+# Show help
+show_help() {
+    cat << EOF
+if-setup - Create AI-ready workspace
+
+Usage:
+  if-setup <project-name> [idea-id]
+
+Examples:
+  if-setup my-saas-app              # Create from scratch
+  if-setup warrantyproof IDEA-145   # Create from catalog
+
+Options:
+  -h, --help     Show this help message
+
+What gets created:
+  ✓ Project directory
+  ✓ .claude/ conversation persistence
+  ✓ .idea-factory/ methodology
+  ✓ GitHub repository
+  ✓ Initial README
+
+Time: ~30 seconds
+
+For more help: https://github.com/pauljump/idea-factory
+EOF
+}
+
+# Parse arguments
+if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+PROJECT_NAME="$1"
+IDEA_ID="${2:-}"
+
+# Validate project name
+if [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    error "Invalid project name: $PROJECT_NAME"
+    echo "  Use only letters, numbers, hyphens, and underscores"
+    exit 1
+fi
+
+# Main setup flow
+echo ""
+log_header "Setting up: $PROJECT_NAME"
+echo ""
+
+# If IDEA_ID provided, scaffold from catalog
+if [ -n "$IDEA_ID" ]; then
+    scaffold_from_catalog "$IDEA_ID" "$PROJECT_NAME"
+else
+    scaffold_new_project "$PROJECT_NAME"
+fi
+
+# Success
+echo ""
+log_success "✨ Setup complete!"
+echo ""
+echo "Next steps:"
+echo ""
+echo_blue "  cd $(get_projects_dir)/$PROJECT_NAME"
+echo "  # Open Claude Code and say 'continue'"
+echo ""
+echo "View GitHub repo:"
+echo "  gh repo view"
+echo ""

@@ -1,0 +1,13 @@
+{
+  "ideaId": "{{IDEA_ID}}",
+  "title": "{{TITLE}}",
+  "status": "{{STATUS}}",
+  "readiness": 0,
+  "github": "https://github.com/pauljump/{{DIRECTORY}}",
+  "directory": "{{DIRECTORY}}",
+  "relatedIdeas": [],
+  "lastSession": "{{TIMESTAMP}}",
+  "technology": [],
+  "domain": [],
+  "nextMilestone": "Start conversation to define project"
+}

@@ -1,0 +1,127 @@
+#!/bin/bash
+set -e
+
+# if-sync - Sync methodology templates to all projects
+# Usage: if-sync [--dry-run]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
+
+# Source utilities
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/config.sh"
+
+# Show help
+show_help() {
+    cat << EOF
+if-sync - Sync methodology templates to all projects
+
+Usage:
+  if-sync [options]
+
+Options:
+  --dry-run      Show what would be synced without making changes
+  -h, --help     Show this help message
+
+What gets synced:
+  ✓ working-guide.md
+  ✓ conversation-protocol.md
+  ✓ experiment-template.md
+  ✓ github-integration.md
+
+What does NOT get synced:
+  ✗ idea-context.json (project-specific)
+
+Example:
+  # Edit master template
+  vim ~/.ideafactory/templates/.idea-factory/working-guide.md
+
+  # Sync to all projects
+  if-sync
+
+For more help: https://github.com/pauljump/idea-factory
+EOF
+}
+
+# Parse arguments
+DRY_RUN=false
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    show_help
+    exit 0
+elif [[ "$1" == "--dry-run" ]]; then
+    DRY_RUN=true
+fi
+
+# Main sync logic
+TEMPLATES_DIR="$(get_templates_dir)/.idea-factory"
+PROJECTS_DIR="$(get_projects_dir)"
+
+if [ ! -d "$TEMPLATES_DIR" ]; then
+    die "Templates directory not found: $TEMPLATES_DIR"
+fi
+
+echo ""
+log_header "Syncing templates to all projects"
+echo ""
+
+if [ "$DRY_RUN" = true ]; then
+    log_warning "DRY RUN - No changes will be made"
+    echo ""
+fi
+
+log_info "Source: $TEMPLATES_DIR"
+log_info "Target: $PROJECTS_DIR/*/.idea-factory/"
+echo ""
+
+# Find all projects with .idea-factory/
+count=0
+synced=0
+
+for project in "$PROJECTS_DIR"/*; do
+    if [ ! -d "$project" ]; then
+        continue
+    fi
+
+    project_name=$(basename "$project")
+
+    if [ -d "$project/.idea-factory" ]; then
+        ((count++))
+
+        if [ "$DRY_RUN" = true ]; then
+            echo_blue "  Would sync: $project_name"
+        else
+            # Copy templates (but preserve idea-context.json)
+            for template in "$TEMPLATES_DIR"/*; do
+                template_name=$(basename "$template")
+
+                # Skip idea-context.json files
+                if [[ "$template_name" == idea-context.json* ]]; then
+                    continue
+                fi
+
+                cp "$template" "$project/.idea-factory/"
+            done
+
+            echo_green "  ✓ $project_name"
+            ((synced++))
+        fi
+    fi
+done
+
+echo ""
+
+if [ "$DRY_RUN" = true ]; then
+    log_info "Would sync $count projects"
+    echo ""
+    log_info "Run without --dry-run to apply changes"
+else
+    if [ $synced -gt 0 ]; then
+        log_success "Synced $synced projects"
+    else
+        log_warning "No projects found with .idea-factory/"
+        echo ""
+        log_info "Create a project first: if-setup my-project"
+    fi
+fi
+
+echo ""
