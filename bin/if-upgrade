@@ -1,0 +1,108 @@
+#!/bin/bash
+set -e
+
+# if-upgrade - Upgrade Idea Factory to latest version
+# Usage: if-upgrade
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
+
+# Source utilities
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/config.sh"
+
+# Show help
+show_help() {
+    cat << EOF
+if-upgrade - Upgrade Idea Factory to latest version
+
+Usage:
+  if-upgrade [options]
+
+Options:
+  -h, --help     Show this help message
+
+What this does:
+  1. Pulls latest from GitHub
+  2. Updates all CLI tools (if-setup, if-sync, if-analytics)
+  3. Updates master templates
+  4. Syncs templates to all projects
+
+Example:
+  if-upgrade
+
+For more help: https://github.com/pauljump/idea-factory
+EOF
+}
+
+# Parse arguments
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+INSTALL_DIR="$HOME/.ideafactory"
+
+echo ""
+log_header "Upgrading Idea Factory"
+echo ""
+
+# Check if installed
+if [ ! -d "$INSTALL_DIR" ]; then
+    die "Idea Factory not installed at $INSTALL_DIR"
+fi
+
+# Check for git
+if [ ! -d "$INSTALL_DIR/.git" ]; then
+    log_warning "Not a git repository, cannot auto-upgrade"
+    echo ""
+    log_info "Reinstall with: curl -fsSL https://raw.githubusercontent.com/pauljump/idea-factory/main/install.sh | bash"
+    exit 1
+fi
+
+# Pull latest
+log_info "Pulling latest from GitHub..."
+cd "$INSTALL_DIR"
+
+git fetch origin main &> /dev/null
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse @{u})
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+    log_success "Already up to date"
+    exit 0
+fi
+
+git pull origin main &> /dev/null
+log_success "Updated to latest version"
+
+# Make scripts executable
+log_info "Updating permissions..."
+chmod +x bin/* lib/* 2>/dev/null || true
+log_success "Permissions updated"
+
+# Update symlinks
+log_info "Updating commands..."
+BIN_DIR="$HOME/.local/bin"
+mkdir -p "$BIN_DIR"
+
+ln -sf "$INSTALL_DIR/bin/idea-factory" "$BIN_DIR/idea-factory"
+ln -sf "$INSTALL_DIR/bin/if-setup" "$BIN_DIR/if-setup"
+ln -sf "$INSTALL_DIR/bin/if-sync" "$BIN_DIR/if-sync"
+ln -sf "$INSTALL_DIR/bin/if-analytics" "$BIN_DIR/if-analytics"
+ln -sf "$INSTALL_DIR/bin/if-upgrade" "$BIN_DIR/if-upgrade"
+
+log_success "Commands updated"
+
+# Sync to all projects
+echo ""
+log_info "Syncing templates to all projects..."
+echo ""
+
+"$BIN_DIR/if-sync" --init-missing
+
+echo ""
+log_success "✨ Upgrade complete!"
+echo ""
+echo "Run 'if-sync --init-missing' anytime to initialize new projects"
+echo ""

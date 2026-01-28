@@ -2,7 +2,7 @@
 set -e
 
 # if-sync - Sync methodology templates to all projects
-# Usage: if-sync [--dry-run]
+# Usage: if-sync [--dry-run] [--init-missing]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
@@ -10,6 +10,7 @@ LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
 # Source utilities
 source "$LIB_DIR/utils.sh"
 source "$LIB_DIR/config.sh"
+source "$LIB_DIR/scaffold.sh"
 
 # Show help
 show_help() {
@@ -20,6 +21,7 @@ Usage:
   if-sync [options]
 
 Options:
+  --init-missing Initialize .idea-factory/ in projects that don't have it
   --dry-run      Show what would be synced without making changes
   -h, --help     Show this help message
 
@@ -34,10 +36,13 @@ What does NOT get synced:
 
 Example:
   # Edit master template
-  vim ~/.ideafactory/templates/.idea-factory/working-guide.md
+  open ~/.ideafactory/templates/.idea-factory/working-guide.md
 
   # Sync to all projects
   if-sync
+
+  # Initialize missing + sync
+  if-sync --init-missing
 
 For more help: https://github.com/pauljump/idea-factory
 EOF
@@ -45,15 +50,26 @@ EOF
 
 # Parse arguments
 DRY_RUN=false
-if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-    show_help
-    exit 0
-elif [[ "$1" == "--dry-run" ]]; then
-    DRY_RUN=true
-fi
+INIT_MISSING=false
+
+for arg in "$@"; do
+    case $arg in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            ;;
+        --init-missing)
+            INIT_MISSING=true
+            ;;
+    esac
+done
 
 # Main sync logic
 TEMPLATES_DIR="$(get_templates_dir)/.idea-factory"
+CLAUDE_TEMPLATE_DIR="$(get_templates_dir)/.claude"
 PROJECTS_DIR="$(get_projects_dir)"
 
 if [ ! -d "$TEMPLATES_DIR" ]; then
@@ -61,7 +77,7 @@ if [ ! -d "$TEMPLATES_DIR" ]; then
 fi
 
 echo ""
-log_header "Syncing templates to all projects"
+log_header "Syncing Idea Factory to all projects"
 echo ""
 
 if [ "$DRY_RUN" = true ]; then
@@ -70,57 +86,100 @@ if [ "$DRY_RUN" = true ]; then
 fi
 
 log_info "Source: $TEMPLATES_DIR"
-log_info "Target: $PROJECTS_DIR/*/.idea-factory/"
+log_info "Target: $PROJECTS_DIR/*/"
 echo ""
 
-# Find all projects with .idea-factory/
+# Find all directories in projects
 count=0
 synced=0
+initialized=0
+skipped=0
 
 for project in "$PROJECTS_DIR"/*; do
     if [ ! -d "$project" ]; then
         continue
     fi
 
+    # Skip idea-factory itself
+    if [[ "$project" == *"idea-factory"* ]] || [[ "$project" == *"idea_factory"* ]]; then
+        continue
+    fi
+
     project_name=$(basename "$project")
+    ((count++))
 
+    # Check if has .idea-factory/
     if [ -d "$project/.idea-factory" ]; then
-        ((count++))
-
+        # Sync templates
         if [ "$DRY_RUN" = true ]; then
             echo_blue "  Would sync: $project_name"
         else
-            # Copy templates (but preserve idea-context.json)
+            # Copy templates (preserve idea-context.json)
             for template in "$TEMPLATES_DIR"/*; do
                 template_name=$(basename "$template")
-
                 # Skip idea-context.json files
                 if [[ "$template_name" == idea-context.json* ]]; then
                     continue
                 fi
-
                 cp "$template" "$project/.idea-factory/"
             done
-
-            echo_green "  ✓ $project_name"
+            echo_green "  ✓ $project_name (synced)"
             ((synced++))
         fi
+    elif [ "$INIT_MISSING" = true ]; then
+        # Initialize .idea-factory/ and .claude/
+        if [ "$DRY_RUN" = true ]; then
+            echo_blue "  Would initialize: $project_name"
+        else
+            cd "$project"
+
+            # Initialize .claude/ if missing
+            if [ ! -d ".claude" ]; then
+                init_claude_structure "$project_name"
+            fi
+
+            # Initialize .idea-factory/
+            copy_idea_factory_templates
+            create_idea_context "$project_name" "" "concept"
+
+            # Create experiments/ if missing
+            if [ ! -d "experiments" ]; then
+                mkdir -p experiments
+            fi
+
+            echo_green "  ✓ $project_name (initialized)"
+            ((initialized++))
+        fi
+    else
+        echo_yellow "  ⊘ $project_name (skipped - no .idea-factory/)"
+        ((skipped++))
     fi
 done
 
 echo ""
 
 if [ "$DRY_RUN" = true ]; then
-    log_info "Would sync $count projects"
+    log_info "Would sync $synced projects"
+    if [ "$INIT_MISSING" = true ]; then
+        log_info "Would initialize $initialized projects"
+    fi
     echo ""
     log_info "Run without --dry-run to apply changes"
 else
     if [ $synced -gt 0 ]; then
         log_success "Synced $synced projects"
-    else
-        log_warning "No projects found with .idea-factory/"
+    fi
+    if [ $initialized -gt 0 ]; then
+        log_success "Initialized $initialized projects"
+    fi
+    if [ $skipped -gt 0 ]; then
+        log_info "$skipped projects skipped (use --init-missing to initialize)"
+    fi
+    if [ $synced -eq 0 ] && [ $initialized -eq 0 ]; then
+        log_warning "No projects found"
         echo ""
         log_info "Create a project first: if-setup my-project"
+        log_info "Or initialize existing: if-sync --init-missing"
     fi
 fi
 

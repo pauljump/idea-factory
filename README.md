@@ -182,9 +182,14 @@ Edit methodology once, deploy to all projects:
 # Edit the master template
 open ~/.ideafactory/templates/.idea-factory/working-guide.md
 
-# Deploy to all projects
+# Deploy to all existing projects
 if-sync
+
+# Initialize any projects missing .idea-factory/
+if-sync --init-missing
 ```
+
+Every directory in `~/Desktop/projects/` becomes an Idea Factory project.
 
 ## Why This Works
 
@@ -218,8 +223,10 @@ Pure bash. No npm, no Python, no dependencies beyond git/gh.
 
 ```bash
 if-setup <name>       # Create new project
-if-sync               # Sync methodology to all projects
+if-sync               # Sync templates to projects with .idea-factory/
+if-sync --init-missing # Initialize ALL projects in ~/Desktop/projects/
 if-analytics          # View readiness dashboard
+if-upgrade            # Upgrade Idea Factory + sync to all projects
 ```
 
 ## Configuration
