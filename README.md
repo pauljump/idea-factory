@@ -176,11 +176,14 @@ if-analytics
 
 ### Sync Methodology
 
-Improve working-guide.md once, deploy to all projects:
+Edit methodology once, deploy to all projects:
 
 ```bash
-vim ~/.ideafactory/templates/.idea-factory/working-guide.md
-if-sync  # Updates all 150 projects
+# Edit the master template
+open ~/.ideafactory/templates/.idea-factory/working-guide.md
+
+# Deploy to all projects
+if-sync
 ```
 
 ## Why This Works
@@ -221,7 +224,7 @@ if-analytics          # View readiness dashboard
 
 ## Configuration
 
-Config at `~/.ideafactory/config`:
+Edit `~/.ideafactory/config` to change defaults:
 
 ```bash
 PROJECTS_DIR=$HOME/Desktop/projects
